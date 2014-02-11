@@ -28,21 +28,27 @@ int main(){
 		print("Connected to host server.");
 		
 	char line[256];
+	char buf[100];
 	int i;
-	if (fgets(line, sizeof(line), stdin)) {
-		if (1 == sscanf(line, "%d", &i)) {
+	while(1){
+		if (fgets(line, sizeof(line), stdin)) {
 			int bytes_sent;
 			send_socket(server, line, bytes_sent);
+			print("Message sent to server.");
+			
+			//read from remote server
+			print("Waiting for server.");
+			int result = read_socket(buf, server);
+			if(result == -1){
+				print("An error occured while reading from remote server. Terminating client");
+				stop_winsock();
+				return FALSE;
+			}else
+				printf("Server Message: %s (%d bytes)\n", buf, sizeof buf);
 		}
 	}
 	
-	//read from remote server
-	char buf[100];
-	int result = read_server(buf, server);
-	if(result == -1)
-		print("An error occured while reading from remote server.");
-	else
-		printf("Server Message: %s (%d bytes)\n", buf, sizeof buf);
+
 	
 	if(close_socket(server))
 		print("Closed connection to server");

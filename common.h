@@ -11,6 +11,23 @@ void set_debug_tag(const char *tag){
 void print(const char* msg){
 	printf("%s: %s\n", tag, msg);
 }
+void add_socket(SOCKET &sock, SOCKET sockets[], int is_recycleable){
+	int id = 0;
+	for(id = 1; id < 100; id++){
+		if(!is_recycleable[id]){	//free slot
+			is_recycleable[id] = 1;
+			sock[id] = &sock;
+			return 1;
+		}
+	}
+	return -1;	//out of slot, max slots used, inform client, and close connection
+}
+int sock_addr2string(sockaddr_in &sin, char str[]){
+	int size = snprintf(str, 100, "%d.%d.%d.%d",  int(sin.sin_addr.s_addr&0xFF), int((sin.sin_addr.s_addr&0xFF00)>>8), int((sin.sin_addr.s_addr&0xFF0000)>>16),int((sin.sin_addr.s_addr&0xFF000000)>>24));
+	//printf("size=%d", size);
+	str[size] = '\0';
+	return size;
+}
 int start_winsock(){
 	//startup winsock
 	print("starting winsock..");
@@ -48,7 +65,10 @@ int read_socket(char recv_buf[], SOCKET &server){
 		recv_code = recv(server, recv_buf, 100, 0);
 		if (recv_code == 0 || recv_code == WSAECONNRESET)
 			return -1;
-	}	
+		if (recv_code < 1)
+			return -1;
+	}
+	recv_buf[recv_code] = '\0';
 	return 1;
 }
 int close_socket(SOCKET &client){
@@ -83,7 +103,12 @@ int bind_socket(SOCKET &server, sockaddr_in &sin){
 }
 
 int listen_socket(SOCKET &server){
-	if(listen(server, SOMAXCONN) == SOCKET_ERROR )
+	int code;
+	code = listen(server, SOMAXCONN);
+	printf("code=%d\n", code);
+	if(code == SOCKET_ERROR )
+		return -1;
+	if(code < 1)
 		return -1;
 	return 1;
 }
@@ -96,7 +121,7 @@ int accept_client(SOCKET &server, sockaddr_in &sin, SOCKET &client){
 		return -1;
 	return 1;
 }
-int send_client(SOCKET &client, char send_buf[], int &code){
+int send_socket(SOCKET &client, char send_buf[], int &code){
 	code = send(client, send_buf, strlen(send_buf), 0);
 	return 1;
 }

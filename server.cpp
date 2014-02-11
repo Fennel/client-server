@@ -35,46 +35,61 @@ int main(int argc, char *args[]){
 	}else
 		print("Successfully bound server socket.");
 
-	if(listen_socket(server) == -1){
-		print("Error listening to bound socket. Server will close.");
-		stop_winsock();
-		return FALSE;
-	}else
-		print("Listening OK");		
-	
-	print("Waiting for client connection...");
-	printf("Incoming client will receive the server message %s\n", msg);
 	SOCKET client;
 	char buf[100];
+	SOCKET *sockets[100];
+	int is_recycleable[100];
 	while(1){
-		if(accept_client(server, sin, client) == -1){
-			print("Encountered a problem while accepting a connection. Server will close.");
+		if(listen_socket(server) == 1){
+			//dequeue connection
+			print("A waiting client exists.");
+			if(accept_client(server, sin, client) == -1){
+				print("Encountered a problem while trying to establish connection. Server will close.");
+				stop_winsock();
+				return FALSE;
+			}else{
+				sock_addr2string(sin, buf);
+				printf("Established connection to client from %s\n", buf);
+				add_socket(client, sockets, is_recycleable)
+			}
+		}else{
+			print("Encountered a problem while listening for connections. Server will close.");
 			stop_winsock();
 			return FALSE;
-		}else
-			print("Incoming client connection accepted");
-			
-		while(1){
-			//read from remote server
-			int result = read_socket(buf, client);
-			if(result == -1)
-				print("An error occured while reading from remote client.");
-				break;
-			else
-				printf("Client Message: %s (%d bytes)\n", buf, sizeof buf);
 		}
+		
+		//loop to list of connected clients
+		//read
+		//is success echo
+		//otherwise close that client and mark it as recycleable
+		
+		printf("Incoming client will receive the server message %s\n", msg);
+		
+		
+		while(1){
+
+			print("Waiting for client message.");
+			while(1){
+				//read from remote client
+				int result = read_socket(buf, client);
+				if(result == -1){
+					print("An error occured while reading from remote client.");
+					break;
+				}else
+					printf("Client Message: %s (%d bytes)\n", buf, sizeof buf);
+				
+				//echo it back
+				//no error handling when sending data to client for now
+				int bytes_sent;
+				send_socket(client, buf, bytes_sent);
+				printf("Sent %d bytes of data\n", bytes_sent);
+			}
 			
-		//sample data. strcpy :)
-		char send_buffer[100];
-		strcpy(send_buffer, msg);
+			if(close_socket(client))
+				print("Closed connection to client");
+		}
 		
-		//no error handling when sending data to client for now
-		int bytes_sent;
-		send_client(client, send_buffer, bytes_sent);
-		printf("Sent %d bytes of data\n", bytes_sent);
-		
-		if(close_socket(client))
-			print("Closed connection to client");
+		break;
 	}
 	
 	stop_winsock();
