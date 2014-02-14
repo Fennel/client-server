@@ -50,7 +50,13 @@ int main(int argc, char *args[]){
 			}else{
 				sock_addr2string(sin, buf);
 				printf("Established connection to client from %s\n", buf);
-				add_socket(client, sockets, is_recycleable)
+				int result = add_socket(client, sockets, is_recycleable);
+				int bytes_sent;
+				if(result == -1){
+					printf("Server capacity full. Connection to this client will close.", buf);
+					send_socket(client, (char *)"Maximum slot capacity reached. Connection will close.", bytes_sent);
+					close_socket(client);
+				}
 			}
 		}else{
 			print("Encountered a problem while listening for connections. Server will close.");

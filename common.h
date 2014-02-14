@@ -11,12 +11,12 @@ void set_debug_tag(const char *tag){
 void print(const char* msg){
 	printf("%s: %s\n", tag, msg);
 }
-void add_socket(SOCKET &sock, SOCKET sockets[], int is_recycleable){
+int add_socket(SOCKET &sock, SOCKET *socks[], int is_recycleable[]){
 	int id = 0;
 	for(id = 1; id < 100; id++){
 		if(!is_recycleable[id]){	//free slot
 			is_recycleable[id] = 1;
-			sock[id] = &sock;
+			socks[id] = &sock;
 			return 1;
 		}
 	}
